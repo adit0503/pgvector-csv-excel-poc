@@ -239,7 +239,7 @@ flowchart LR
 
 3. **Run the interactive query CLI inside Docker:**
    ```bash
-   docker compose run --rm app python query.py
+   docker compose run --rm app python -m pgvector_poc.query
    ```
 
 ---
@@ -256,25 +256,31 @@ flowchart LR
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
-   pip install -r requirements.txt
+   pip install -e .
    ```
 
 3. **Generate sample files & ingest data into PostgreSQL:**
    ```bash
-   python generate_data.py
-   python ingest.py
+   # Using module execution:
+   python -m pgvector_poc.generate_data
+   python -m pgvector_poc.ingest
+
+   # Or using installed CLI commands:
+   pgvector-generate
+   pgvector-ingest
    ```
 
 4. **Run the automated walkthrough:**
    ```bash
-   python demo.py
+   python -m pgvector_poc.demo
+   # Or: pgvector-demo
    ```
 
 ---
 
 ## 6. Interactive Exploration & Query CLI
 
-Run `python query.py` (or `docker compose run --rm app python query.py`):
+Run `python -m pgvector_poc.query` (or `docker compose run --rm app python -m pgvector_poc.query` or `pgvector-query`):
 
 ```text
 ============================================================
@@ -285,7 +291,7 @@ Options:
   2: Hybrid Filtered Search Products (e.g. price filter + semantic query)
   3: Search IT Support Incidents & Resolutions (from Excel)
   4: Show Query Execution Plan (EXPLAIN ANALYZE HNSW)
-  q: Exit
+  5: Exit
 ============================================================
 ```
 
@@ -330,16 +336,21 @@ Execution Time: 0.115 ms
 pgvector-csv-excel-poc/
 ├── docker-compose.yml          # Postgres + pgvector and App service definitions
 ├── Dockerfile                  # Container definition with pre-cached embedding model
+├── pyproject.toml              # Modern package configuration & CLI entry points
 ├── requirements.txt            # Python dependencies (pgvector, sentence-transformers, pandas, etc.)
-├── config.py                   # DB connection parameters & model configurations
-├── generate_data.py            # Generates realistic CSV and Excel sample datasets
-├── db.py                       # PostgreSQL connection, extension, and HNSW index management
-├── embedder.py                 # SentenceTransformer vectorizer & row-to-text serializes
-├── ingest.py                   # CSV & XLSX ingestion, vector generation, and UPSERT logic
-├── query.py                    # Semantic, hybrid, and EXPLAIN query functions + Interactive CLI
-├── demo.py                     # Full end-to-end automated demonstration
+├── .gitignore                  # Git ignore rules for caches, venvs, and build artifacts
+├── README.md                   # Comprehensive guide and documentation
 ├── sample_data/                # Auto-generated CSV and Excel datasets
 │   ├── products.csv
 │   └── customer_tickets.xlsx
-└── README.md                   # Comprehensive guide and documentation
+└── src/
+    └── pgvector_poc/           # Modular Python package
+        ├── __init__.py         # Package declaration and versioning
+        ├── config.py           # DB connection parameters & model configurations
+        ├── db.py               # PostgreSQL connection, extension, and HNSW index management
+        ├── embedder.py         # SentenceTransformer vectorizer & row-to-text serializers
+        ├── generate_data.py    # Generates realistic CSV and Excel sample datasets
+        ├── ingest.py           # CSV & XLSX ingestion, vector generation, and UPSERT logic
+        ├── query.py            # Semantic, hybrid, and EXPLAIN query functions + Interactive CLI
+        └── demo.py             # Full end-to-end automated demonstration
 ```

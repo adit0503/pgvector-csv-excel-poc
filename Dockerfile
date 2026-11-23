@@ -10,12 +10,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY requirements.txt .
+COPY requirements.txt pyproject.toml ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Pre-download the Hugging Face sentence-transformers model to cache it inside image
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 COPY . .
+RUN pip install --no-cache-dir -e .
 
-CMD ["python", "demo.py"]
+ENV PYTHONPATH=/app/src
+
+CMD ["python", "-m", "pgvector_poc.demo"]

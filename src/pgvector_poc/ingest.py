@@ -10,16 +10,19 @@ Pipeline steps:
 6. Build HNSW (Hierarchical Navigable Small World) vector index.
 """
 
+import sys
 import os
+from pathlib import Path
 import pandas as pd
 import numpy as np
-from db import get_connection, init_database, create_vector_indexes
-from embedder import embed_texts, row_to_search_text_product, row_to_search_text_ticket
-import generate_data
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample_data")
-CSV_PATH = os.path.join(DATA_DIR, "products.csv")
-XLSX_PATH = os.path.join(DATA_DIR, "customer_tickets.xlsx")
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pgvector_poc.config import DATA_DIR, CSV_PATH, XLSX_PATH
+from pgvector_poc.db import get_connection, init_database, create_vector_indexes
+from pgvector_poc.embedder import embed_texts, row_to_search_text_product, row_to_search_text_ticket
+from pgvector_poc import generate_data
 
 def ensure_sample_data():
     if not os.path.exists(CSV_PATH) or not os.path.exists(XLSX_PATH):
@@ -43,7 +46,7 @@ def ingest_products_csv():
     # 2. Compute embeddings
     print("-> Generating 384-dimension vector embeddings using sentence-transformers...")
     vectors = embed_texts(df['search_text'].tolist())
-    df['embedding'] = vectors
+    df['embedding'] = list(vectors)
 
     # 3. Insert into PostgreSQL
     conn = get_connection()
@@ -97,7 +100,7 @@ def ingest_tickets_xlsx():
     # 2. Compute embeddings
     print("-> Generating 384-dimension vector embeddings using sentence-transformers...")
     vectors = embed_texts(df['search_text'].tolist())
-    df['embedding'] = vectors
+    df['embedding'] = list(vectors)
 
     # 3. Insert into PostgreSQL
     conn = get_connection()

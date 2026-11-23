@@ -8,10 +8,21 @@ Walks through all key concepts:
 5. Execution Plan Inspection (EXPLAIN ANALYZE showing HNSW Index Scan)
 """
 
+import sys
 import time
+from pathlib import Path
 from tabulate import tabulate
-import ingest
-from query import semantic_search_products, hybrid_search_products, search_tickets, explain_vector_query
+
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pgvector_poc import ingest
+from pgvector_poc.query import (
+    semantic_search_products,
+    hybrid_search_products,
+    search_tickets,
+    explain_vector_query,
+)
 
 def print_header(title):
     print("\n" + "="*80)
@@ -90,7 +101,7 @@ def main():
     print_header("DEMO SUMMARY")
     print("All tasks completed successfully!")
     print("You can explore interactively by running:")
-    print("  python query.py")
+    print("  python -m pgvector_poc.query")
     print("="*80 + "\n")
 
 if __name__ == "__main__":

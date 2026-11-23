@@ -7,9 +7,14 @@ Query interface demonstrating:
 """
 
 import sys
+from pathlib import Path
 from tabulate import tabulate
-from db import get_connection
-from embedder import embed_query
+
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pgvector_poc.db import get_connection
+from pgvector_poc.embedder import embed_query
 
 def semantic_search_products(query_text: str, top_k: int = 3):
     """
@@ -133,8 +138,7 @@ def explain_vector_query(query_text: str):
     conn = get_connection()
     cur = conn.cursor()
 
-    # Note: On very small datasets, Postgres cost planner may choose Seq Scan unless
-    # enable_seqscan = off is toggled to inspect the index path.
+    # On small datasets, Postgres planner may default to Seq Scan unless enable_seqscan is toggled
     cur.execute("SET enable_seqscan = off;")
     sql = """
         EXPLAIN (ANALYZE, BUFFERS)
@@ -204,7 +208,7 @@ def interactive_cli():
             print("\nPostgreSQL Query Plan:")
             print(plan)
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) > 1:
         query_arg = " ".join(sys.argv[1:])
         print(f"Executing semantic search for: '{query_arg}'")
@@ -212,3 +216,6 @@ if __name__ == "__main__":
         print(tabulate(res, headers="keys", tablefmt="rounded_outline"))
     else:
         interactive_cli()
+
+if __name__ == "__main__":
+    main()

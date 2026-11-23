@@ -4,16 +4,17 @@ Generates realistic sample datasets:
 2. sample_data/customer_tickets.xlsx (IT support & troubleshooting tickets)
 """
 
+import sys
 import os
 import csv
 import zipfile
 import xml.sax.saxutils as saxutils
+from pathlib import Path
 
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample_data")
-os.makedirs(DATA_DIR, exist_ok=True)
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-CSV_FILE = os.path.join(DATA_DIR, "products.csv")
-XLSX_FILE = os.path.join(DATA_DIR, "customer_tickets.xlsx")
+from pgvector_poc.config import DATA_DIR, CSV_PATH, XLSX_PATH
 
 PRODUCTS = [
     {
@@ -221,19 +222,19 @@ TICKETS = [
 ]
 
 def generate_csv():
-    with open(CSV_FILE, mode="w", newline="", encoding="utf-8") as f:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(CSV_PATH, mode="w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["sku", "name", "category", "price", "rating", "description", "stock"])
         writer.writeheader()
         for prod in PRODUCTS:
             writer.writerow(prod)
-    print(f"-> Generated CSV: {CSV_FILE} ({len(PRODUCTS)} records)")
+    print(f"-> Generated CSV: {CSV_PATH} ({len(PRODUCTS)} records)")
 
 def create_pure_xlsx(filepath, headers, rows):
     """
     Creates a standard, valid Excel (.xlsx) file using pure standard library (zipfile + xml).
     Works without needing third-party libraries installed upfront!
     """
-    # Collect shared strings
     shared_strings = []
     string_map = {}
 
@@ -244,7 +245,6 @@ def create_pure_xlsx(filepath, headers, rows):
             shared_strings.append(s)
         return string_map[s]
 
-    # Content Types
     content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
@@ -254,20 +254,17 @@ def create_pure_xlsx(filepath, headers, rows):
   <Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>
 </Types>"""
 
-    # Package Relationships
     pkg_rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
 </Relationships>"""
 
-    # Workbook Relationships
     wb_rels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>
 </Relationships>"""
 
-    # Workbook
     workbook = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <sheets>
@@ -275,10 +272,7 @@ def create_pure_xlsx(filepath, headers, rows):
   </sheets>
 </workbook>"""
 
-    # Build Sheet Rows
     sheet_rows_xml = []
-    
-    # Header row (row 1)
     col_names = ["A", "B", "C", "D", "E", "F", "G", "H"]
     header_cells = []
     for col_idx, h in enumerate(headers):
@@ -287,7 +281,6 @@ def create_pure_xlsx(filepath, headers, rows):
         header_cells.append(f'<c r="{cell_ref}" t="s"><v>{s_idx}</v></c>')
     sheet_rows_xml.append(f'<row r="1">{"".join(header_cells)}</row>')
 
-    # Data rows (rows 2..)
     for row_idx, row in enumerate(rows, start=2):
         row_cells = []
         for col_idx, col_name in enumerate(headers):
@@ -304,7 +297,6 @@ def create_pure_xlsx(filepath, headers, rows):
   </sheetData>
 </worksheet>"""
 
-    # Build sharedStrings XML
     sst_entries = []
     for s in shared_strings:
         escaped = saxutils.escape(s)
@@ -315,7 +307,6 @@ def create_pure_xlsx(filepath, headers, rows):
   {"".join(sst_entries)}
 </sst>"""
 
-    # Pack into zip
     with zipfile.ZipFile(filepath, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", content_types)
         z.writestr("_rels/.rels", pkg_rels)
@@ -325,11 +316,16 @@ def create_pure_xlsx(filepath, headers, rows):
         z.writestr("xl/sharedStrings.xml", shared_strings_xml)
 
 def generate_xlsx():
+    os.makedirs(DATA_DIR, exist_ok=True)
     headers = ["ticket_id", "department", "priority", "title", "description", "resolution"]
-    create_pure_xlsx(XLSX_FILE, headers, TICKETS)
-    print(f"-> Generated XLSX: {XLSX_FILE} ({len(TICKETS)} records)")
+    create_pure_xlsx(XLSX_PATH, headers, TICKETS)
+    print(f"-> Generated XLSX: {XLSX_PATH} ({len(TICKETS)} records)")
 
-if __name__ == "__main__":
+def main():
+    print(f"-> Generating sample datasets under {DATA_DIR}...")
     generate_csv()
     generate_xlsx()
-    print("Sample datasets successfully created!")
+    print("-> Sample datasets successfully created!")
+
+if __name__ == "__main__":
+    main()

@@ -3,9 +3,15 @@ Database connection and schema setup helper.
 Manages PostgreSQL connection, pgvector extension, table schemas, and HNSW indexes.
 """
 
+import sys
+from pathlib import Path
 import psycopg2
 from pgvector.psycopg2 import register_vector
-import config
+
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pgvector_poc import config
 
 def get_connection():
     """Establishes connection to PostgreSQL and registers pgvector adapter."""
@@ -17,6 +23,11 @@ def get_connection():
         password=config.DB_PASSWORD
     )
     conn.autocommit = True
+    try:
+        register_vector(conn)
+    except Exception:
+        # If vector extension is not yet created in the DB, register_vector might fail
+        pass
     return conn
 
 def init_database():

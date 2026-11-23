@@ -3,8 +3,15 @@ Embedding Service using sentence-transformers (all-MiniLM-L6-v2).
 Converts text descriptions or tabular rows into dense 384-dimensional vectors.
 """
 
+import sys
+from pathlib import Path
+import numpy as np
 from sentence_transformers import SentenceTransformer
-import config
+
+# Ensure package import works when run directly
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from pgvector_poc import config
 
 _model = None
 
@@ -15,14 +22,14 @@ def get_model():
         _model = SentenceTransformer(config.MODEL_NAME)
     return _model
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Encodes a list of strings into normalized 384-dimensional float vectors."""
+def embed_texts(texts: list[str]) -> np.ndarray:
+    """Encodes a list of strings into normalized 384-dimensional float vectors as a numpy array."""
     model = get_model()
     embeddings = model.encode(texts, normalize_embeddings=True, show_progress_bar=False)
-    return [e.tolist() for e in embeddings]
+    return np.asarray(embeddings, dtype=np.float32)
 
-def embed_query(query: str) -> list[float]:
-    """Encodes a single query string."""
+def embed_query(query: str) -> np.ndarray:
+    """Encodes a single query string into a 1D numpy vector."""
     return embed_texts([query])[0]
 
 def row_to_search_text_product(row: dict) -> str:

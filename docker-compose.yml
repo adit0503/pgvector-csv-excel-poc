@@ -29,11 +29,12 @@ services:
       DB_NAME: vectordb
       DB_USER: postgres
       DB_PASSWORD: password123
+      PYTHONPATH: /app/src
     volumes:
       - .:/app
     stdin_open: true
     tty: true
-    command: python demo.py
+    command: python -m pgvector_poc.demo
 
 volumes:
   pgdata:
